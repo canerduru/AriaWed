@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessageToAria } from '../services/geminiService';
 import { getAriaContext, getSuggestedPrompts } from '../services/ariaService';
+import { isApiConfigured, ariaApi } from '../api/client';
 import { ChatMessage, View } from '../types';
 import { MessageCircle, X, Send, Loader2, Sparkles, Lightbulb, HeartHandshake } from 'lucide-react';
 
@@ -47,11 +48,11 @@ export const AriaChat: React.FC<AriaChatProps> = ({ currentView = View.DASHBOARD
     setIsLoading(true);
 
     try {
-      // Get fresh context to send with the message
       const contextData = getAriaContext(currentView);
       const contextString = JSON.stringify(contextData);
-      
-      const responseText = await sendMessageToAria(userMsg.text, contextString);
+      const responseText = isApiConfigured()
+        ? (await ariaApi.chat(userMsg.text, contextString)).text
+        : await sendMessageToAria(userMsg.text, contextString);
       
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),

@@ -89,5 +89,7 @@ export const parseCSV = async (file: File): Promise<Partial<Guest>[]> => {
 };
 
 export const generateRSVPLink = (token: string) => {
-  return `${window.location.origin}/rsvp/${token}`;
+  const base = (typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL) || '';
+  const path = base.replace(/\/$/, '') + '/rsvp/' + token;
+  return `${window.location.origin}${path}`;
 };

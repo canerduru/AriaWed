@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { WeddingDetails, VendorOnboardingDetails } from '../types';
 import { Check, ChevronRight, ChevronLeft, Calendar, MapPin, Users, Heart, Music, Camera, Utensils, Shirt, Globe, Mail } from 'lucide-react';
+import { useWedding } from '../contexts/WeddingContext';
+import { isApiConfigured } from '../api/client';
 
 interface OnboardingProps {
   userRole: 'bride' | 'groom' | 'vendor' | 'admin';
@@ -8,6 +10,7 @@ interface OnboardingProps {
 }
 
 export const Onboarding: React.FC<OnboardingProps> = ({ userRole, onComplete }) => {
+  const { createWedding } = useWedding();
   const [step, setStep] = useState(1);
   const [weddingDetails, setWeddingDetails] = useState<Partial<WeddingDetails>>({
     priorities: [],
@@ -21,9 +24,21 @@ export const Onboarding: React.FC<OnboardingProps> = ({ userRole, onComplete }) 
   const nextStep = () => setStep(prev => Math.min(prev + 1, totalSteps));
   const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
 
-  const handleFinish = () => {
-    // Simulate API save
-    console.log("Saving onboarding data:", isCouple ? weddingDetails : vendorDetails);
+  const handleFinish = async () => {
+    if (isCouple && isApiConfigured() && weddingDetails.date) {
+      try {
+        await createWedding({
+          date: weddingDetails.date || '',
+          location: weddingDetails.location || '',
+          guestCount: weddingDetails.guestCount ?? 0,
+          budget: weddingDetails.budget ?? 0,
+          priorities: weddingDetails.priorities || [],
+          styles: weddingDetails.styles || [],
+          culture: weddingDetails.culture || '',
+          partnerEmail: weddingDetails.partnerEmail,
+        });
+      } catch (_) {}
+    }
     onComplete();
   };
 

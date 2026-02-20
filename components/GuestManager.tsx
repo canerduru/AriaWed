@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Users, UserPlus, Download, Search, Filter, Mail, 
   CheckCircle, XCircle, Clock, Utensils, Baby, ExternalLink,
@@ -7,11 +7,26 @@ import {
 import { Guest, Side, GroupType, RsvpStatus } from '../types';
 import { MOCK_GUESTS, calculateStats, parseCSV, generateRSVPLink } from '../services/guestService';
 import { RSVPPublicPage } from './RSVPPublicPage';
+import { useWedding } from '../contexts/WeddingContext';
+import { isApiConfigured, guestsApi } from '../api/client';
+import { useToast } from '../contexts/ToastContext';
 
 export const GuestManager: React.FC = () => {
+  const { wedding } = useWedding();
+  const { addToast } = useToast();
   const [view, setView] = useState<'dashboard' | 'list' | 'form' | 'rsvp-preview'>('dashboard');
   const [guests, setGuests] = useState<Guest[]>(MOCK_GUESTS);
-  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null); // For edit or RSVP preview
+  const [loading, setLoading] = useState(false);
+  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
+
+  useEffect(() => {
+    if (!isApiConfigured() || !wedding?.id) return;
+    setLoading(true);
+    guestsApi.list(wedding.id)
+      .then((list: any) => setGuests(Array.isArray(list) ? list : MOCK_GUESTS))
+      .catch(() => setGuests(MOCK_GUESTS))
+      .finally(() => setLoading(false));
+  }, [wedding?.id]);
   
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,17 +43,43 @@ export const GuestManager: React.FC = () => {
     return matchesSearch && matchesSide && matchesStatus;
   });
 
-  const handleSaveGuest = (guest: Guest) => {
-    if (guests.find(g => g.id === guest.id)) {
-      setGuests(guests.map(g => g.id === guest.id ? guest : g));
+  const handleSaveGuest = async (guest: Guest) => {
+    const weddingId = wedding?.id;
+    if (isApiConfigured() && weddingId) {
+      try {
+        if (guests.find(g => g.id === guest.id)) {
+          const updated = await guestsApi.update(guest.id, guest) as Guest;
+          setGuests(guests.map(g => g.id === guest.id ? updated : g));
+        } else {
+          const created = await guestsApi.create(weddingId, guest) as Guest;
+          setGuests([...guests, created]);
+        }
+        addToast('Guest saved.', 'success');
+      } catch {
+        addToast('Failed to save guest.', 'error');
+        return;
+      }
     } else {
-      setGuests([...guests, { ...guest, id: Date.now().toString(), rsvpToken: Math.random().toString(36).substr(2, 9) }]);
+      if (guests.find(g => g.id === guest.id)) {
+        setGuests(guests.map(g => g.id === guest.id ? guest : g));
+      } else {
+        setGuests([...guests, { ...guest, id: Date.now().toString(), rsvpToken: Math.random().toString(36).substr(2, 9) }]);
+      }
     }
     setView('list');
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this guest?')) {
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this guest?')) return;
+    if (isApiConfigured()) {
+      try {
+        await guestsApi.delete(id);
+        setGuests(guests.filter(g => g.id !== id));
+        addToast('Guest removed.', 'success');
+      } catch {
+        addToast('Failed to delete guest.', 'error');
+      }
+    } else {
       setGuests(guests.filter(g => g.id !== id));
     }
   };

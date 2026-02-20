@@ -2,6 +2,10 @@
 
 **GitHub Pages:** Site otomatik olarak `main` branch’e her push’ta deploy edilir. Repo **Settings → Pages** bölümünde **Source** olarak **"GitHub Actions"** seçili olmalı. Yayın adresi: https://canerduru.github.io/AriaWed/
 
+**Running locally (with backend):**
+1. Frontend: `npm install` then `npm run dev` (Vite on port 3000). Optional: create `.env` with `VITE_API_URL=http://localhost:3001` or rely on Vite proxy.
+2. Backend: `cd server && npm install && npm run init-db` then `npm run start` (API on port 3001). Set `JWT_SECRET` and `GEMINI_API_KEY` in `.env` if needed. If `better-sqlite3` fails to build, run `npm rebuild better-sqlite3` in the `server` folder.
+
 **Platform Overview:** AriaWed is an end-to-end wedding planning platform featuring vendor bidding, separate guest list management, and Aria - an AI wedding assistant.
 
 ## Phase 3 Update: Comprehensive Budget Management System
