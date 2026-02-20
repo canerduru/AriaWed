@@ -1,5 +1,7 @@
 # AriaWed - Technical Architecture
 
+**GitHub Pages:** Site otomatik olarak `main` branch’e her push’ta deploy edilir. Repo **Settings → Pages** bölümünde **Source** olarak **"GitHub Actions"** seçili olmalı. Yayın adresi: https://canerduru.github.io/AriaWed/
+
 **Platform Overview:** AriaWed is an end-to-end wedding planning platform featuring vendor bidding, separate guest list management, and Aria - an AI wedding assistant.
 
 ## Phase 3 Update: Comprehensive Budget Management System
